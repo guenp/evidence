@@ -165,11 +165,12 @@ export async function local_query(sql) {
 	await withTimeout(tablesPromise);
 
 	// Now we can safely execute our query
+	console.log(`"*** Running local query *** ${sql}:"`);
 	const res = await connection.query(sql).then((response) => {
-		console.log(`Received response: ${response}`);
+		console.log(`Received local response: ${response}`);
 		return arrowTableToJSON(response);
 	  });
-	console.log(`"Result for query ${sql}:"`, res);
+	console.log(`"Result for local query ${sql}:"`, res);
 	return res;
 }
 
@@ -182,13 +183,18 @@ export async function local_query(sql) {
 export async function query(sql) {
 	console.log(`"*** Running MD query *** ${sql}:"`);
 	try {
-		const result = await md_connection.evaluateStreamingQuery(sql);
-		const batches = await result.arrowStream.readAll();
-		const res = arrowTableToJSON(new Table(batches));
-		console.log('*** Result for query ***: ' + sql, res);
+		const res = await md_connection.evaluateStreamingQuery(sql).then((response) => {
+			console.log(`*** Received MD response *** ${sql}`, response);
+				return response.arrowStream.readAll();
+		  }).then((arrowStream) => {
+			const table = new Table(arrowStream);
+			console.log(`*** Received MD table *** ${sql}`, table);
+			return table;
+		  });
+		console.log(`*** Result for MD query ***: ${sql}`, res);
 		return res;
 	} catch (err) {
-		console.log('*** Query failed ***: ' + sql, err);
+		console.log(`*** MD Query failed ***: ${sql}`, err);
 		return local_query(sql);
 	}
 }
