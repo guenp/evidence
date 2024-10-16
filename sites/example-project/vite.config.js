@@ -32,7 +32,8 @@ const config = {
 		rollupOptions: {
 			external: [/^@evidence-dev\/tailwind\/fonts\//]
 		}
-	}
+	},
+	logLevel: 'debug'
 };
 
 export default config;

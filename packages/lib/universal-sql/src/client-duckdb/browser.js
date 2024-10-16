@@ -188,14 +188,18 @@ export async function query(sql) {
 				return response.arrowStream.readAll();
 		  }).then((arrowStream) => {
 			const table = new Table(arrowStream);
-			console.log(`*** Received MD table *** ${sql}`, table);
+			if (table == undefined) {
+				const result = md_connection.evaluateQuery(sql);
+				console.log(`*** MD Result ***`, result.data.toRows());
+				return result;
+			}
 			return table;
 		  });
 		console.log(`*** Result for MD query ***: ${sql}`, res);
 		return res;
 	} catch (err) {
 		console.log(`*** MD Query failed ***: ${sql}`, err);
-		return local_query(sql);
+		// return local_query(sql);
 	}
 }
 
