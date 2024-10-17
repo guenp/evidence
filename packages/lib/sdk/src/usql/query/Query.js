@@ -458,10 +458,6 @@ SELECT COUNT(*) as rowCount FROM (${this.text.trim()})
 			(lengthResult, isPromise) => {
 				const after = performance.now();
 				this.#lengthQueryTime = after - before;
-				console.log("Length query: " + lengthQuery);
-				console.log("Length result: " + lengthResult);
-				console.log("GETTING ROW COUNT of" + lengthResult[0]);
-				// this.#length = lengthResult[0].rowCount;
 				this.#length = lengthResult[0].rowCount;
 				this.#sharedLengthPromise.resolve(this);
 				if (isPromise) {
