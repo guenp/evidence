@@ -174,6 +174,57 @@ export async function local_query(sql) {
 	return res;
 }
 
+export function parseJSON(fields, json) {
+	const arr = JSON.parse(json);
+
+	Object.defineProperty(arr, '_evidenceColumnTypes', {
+		enumerable: false,
+		value: fields.map((field) => ({
+			name: field.name,
+			evidenceType: apacheToEvidenceType(field.type),
+			typeFidelity: 'precise'
+		}))
+	});
+
+	let rowIndex = 0;
+
+	arr.forEach(item => {
+		item.rowIndex = rowIndex;
+  		rowIndex++;
+	});
+
+	return arr;
+}
+
+
+/**
+ * Queries the database with the given SQL statement.
+ *
+ * @param {string} sql
+ * @returns {Promise<import("apache-arrow").Table | null>}
+ */
+export async function md_query(sql) {
+	console.log(`"*** Running MD query *** ${sql}:"`);
+	try {
+		const result = await md_connection.evaluateQuery(sql);
+		const fields = result.data.batches[0].recordBatch.schema.fields;
+		const rows = result.data.toRows();
+		const json = JSON.stringify(rows, (key, value) =>
+			typeof value === 'bigint'
+				? Number(value)
+				: value // return everything else unchanged
+		);
+		const table = result;
+		const res = parseJSON(fields, json);
+		console.log('*** Result for query ***: ' + sql, res);
+		return res;
+	} catch (err) {
+		console.log('*** Query failed ***: ' + sql, err);
+		return local_query(sql);
+	}
+}
+
+
 /**
  * Queries the database with the given SQL statement.
  *
@@ -181,21 +232,10 @@ export async function local_query(sql) {
  * @returns {Promise<import("apache-arrow").Table | null>}
  */
 export async function query(sql) {
-	console.log(`"*** Running MD query *** ${sql}:"`);
 	try {
-		const res = await md_connection.evaluateStreamingQuery(sql).then((response) => {
-			console.log(`*** Received MD response *** ${sql}`, response);
-				return response.arrowStream.readAll();
-		  }).then((arrowStream) => {
-			const table = new Table(arrowStream);
-			if (table == undefined) {
-				const result = md_connection.evaluateQuery(sql);
-				console.log(`*** MD Result ***`, result.data.toRows());
-				return result;
-			}
-			return table;
-		  });
-		console.log(`*** Result for MD query ***: ${sql}`, res);
+		const res = md_query(sql);
+		console.log(`*** MD Query Result ***: ${sql}`, res);
+		return res;
 		return res;
 	} catch (err) {
 		console.log(`*** MD Query failed ***: ${sql}`, err);
