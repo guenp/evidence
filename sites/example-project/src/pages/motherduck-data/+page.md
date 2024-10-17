@@ -1,10 +1,27 @@
 ---
-title: Line Chart
+title: MotherDuck data
 queries:
-  - orders_by_month: orders_by_month.sql
-  - orders_by_category: orders_by_category.sql
+  - complaints: complaints.sql
 ---
 
+<BarChart 
+    data={complaints}
+    x=Year
+    y=Complaints
+/>
+
+```sql complaints_details
+select year(created_date)::int as Year, complaint_type as Type, count(*)::int as Complaints
+        from sample_data.nyc.service_requests
+        where Year < 2023
+        and agency_name = 'New York City Police Department'
+        group by 1, 2
+        order by 1, 3 desc
+```
+
+<DataTable data={complaints_details} />
+
+<!-- 
 ```sql simpler_bar
 select 'Canada' as country, 60 as value, 1990 as year
 union all
@@ -171,4 +188,4 @@ select '2021-01-07'::date as date, null as value, null as value2
   x=date
   y={['value','value2']}
   handleMissing=zero
-/>
+/> -->

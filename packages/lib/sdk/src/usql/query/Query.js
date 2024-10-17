@@ -443,7 +443,7 @@ ${this.text.trim()}
 		const lengthQuery =
 			`
 ---- Length ${this.#id} (${this.#hash})
-SELECT COUNT(*)::DOUBLE as rowCount FROM (${this.text.trim()})
+SELECT COUNT(*) as rowCount FROM (${this.text.trim()})
         `.trim() + '\n';
 
 		// gotta love jsdoc sometimes
